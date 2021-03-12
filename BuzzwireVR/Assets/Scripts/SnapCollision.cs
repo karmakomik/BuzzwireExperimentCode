@@ -23,6 +23,7 @@ public class SnapCollision : MonoBehaviour
         Debug.Log("Snap!");
 
         gameController.GetComponent<GameControllerScript>().doControllerReattachOperations();
+        gameController.GetComponent<GameControllerScript>().stopMistakeFeedback();
 
     }
 }

@@ -5,6 +5,7 @@ using UnityEngine;
 public class RingCollision : MonoBehaviour
 {
     public GameObject gameController;
+    Vector3 loc;
     // Start is called before the first frame update
     void Start()
     {
@@ -16,11 +17,24 @@ public class RingCollision : MonoBehaviour
     {
         
     }
-
-    private void OnTriggerEnter(Collider other)
+    
+    private void OnTriggerStay(Collider other)
     {
-        Debug.Log("Collision!");
-
-        gameController.GetComponent<GameControllerScript>().doControllerDetachOperations();
+        Debug.Log("Trigger!");
+        loc = other.gameObject.GetComponent<Collider>().ClosestPointOnBounds(transform.position);
+        Debug.Log(loc);
+       
     }
+
+    private void OnTriggerExit(Collider other)
+    {
+        gameController.GetComponent<GameControllerScript>().doControllerDetachOperations();
+        gameController.GetComponent<GameControllerScript>().triggerMistakeFeedback();
+    }
+
+    /*private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawSphere(loc, 0.005f);
+    }*/
 }
