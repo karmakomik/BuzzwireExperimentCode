@@ -17,10 +17,16 @@ public class RingCollision : MonoBehaviour
     {
         
     }
-    
+
+    private void OnTriggerEnter(Collider other)
+    {
+        Debug.Log("Entry ");//( + other.gameObject);
+    }
+
     private void OnTriggerStay(Collider other)
     {
-        Debug.Log("Trigger!");
+        //Debug.Log("Collision with " + other.gameObject);
+
         loc = other.gameObject.GetComponent<Collider>().ClosestPointOnBounds(transform.position);
         Debug.Log(loc);
        
@@ -28,6 +34,7 @@ public class RingCollision : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
+        Debug.Log("Exit ");//( + other.gameObject);
         gameController.GetComponent<GameControllerScript>().doControllerDetachOperations();
         gameController.GetComponent<GameControllerScript>().triggerMistakeFeedback();
     }
