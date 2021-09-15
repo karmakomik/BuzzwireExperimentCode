@@ -5,6 +5,9 @@ TagManager:
   serializedVersion: 2
   tags:
   - Touchable
+  - x-axis
+  - y-axis
+  - z-axis
   layers:
   - Default
   - TransparentFX

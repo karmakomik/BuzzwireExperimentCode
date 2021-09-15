@@ -35,7 +35,8 @@ public class RingCollision : MonoBehaviour
     private void OnTriggerExit(Collider other)
     {
         Debug.Log("Exit ");//( + other.gameObject);
-        gameController.GetComponent<GameControllerScript>().doControllerDetachOperations();
+        Debug.Log("Collider tag - " + other.gameObject.tag);
+        gameController.GetComponent<GameControllerScript>().doControllerDetachOperations(other.gameObject.tag, loc);
         gameController.GetComponent<GameControllerScript>().triggerMistakeFeedback();
     }
 
