@@ -20,7 +20,8 @@ public class RingCollision : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        Debug.Log("Entry ");//( + other.gameObject);
+        Debug.Log("Entry into "  + other.gameObject);
+        gameController.GetComponent<GameControllerScript>().doControllerReattachOperations(other.gameObject.tag);
     }
 
     private void OnTriggerStay(Collider other)
@@ -28,7 +29,7 @@ public class RingCollision : MonoBehaviour
         //Debug.Log("Collision with " + other.gameObject);
 
         loc = other.gameObject.GetComponent<Collider>().ClosestPointOnBounds(transform.position);
-        Debug.Log(loc);
+        //Debug.Log(loc);
        
     }
 

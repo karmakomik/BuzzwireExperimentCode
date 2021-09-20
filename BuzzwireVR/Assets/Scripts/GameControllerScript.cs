@@ -7,12 +7,17 @@ public class GameControllerScript : MonoBehaviour
     public GameObject hookRoot;
     public GameObject originalHookModel;
     public GameObject hookChildWithColliders;
+
     public Quaternion hookRootDefaultRot;
     public Vector3 hookRootDefaultPos;
+    public Quaternion solidRightHandControllerDefaultRot;
+    public Vector3 solidRightHandControllerDefaultPos;
+
     public GameObject righthandController;
     public GameObject ghostRightHandController;
     public GameObject solidRightHandController;
     public GameObject snapSlot;
+    public GameObject rightHandAnchor;
     bool checkSnapCondition;
     Vector3 detachPt;
 
@@ -30,13 +35,55 @@ public class GameControllerScript : MonoBehaviour
     {
         hookRootDefaultRot = hookRoot.transform.localRotation;
         hookRootDefaultPos = hookRoot.transform.localPosition;
+        solidRightHandControllerDefaultRot = solidRightHandController.transform.localRotation;
+        solidRightHandControllerDefaultPos = solidRightHandController.transform.localPosition;
+
         checkSnapCondition = false;
     }
+
+    float translateFactor = 0.001f;
 
     // Update is called once per frame
     void Update()
     {
-        
+        if (Input.GetKey(KeyCode.DownArrow))
+        {
+            //print("Down");
+            rightHandAnchor.transform.Translate(Vector3.down * translateFactor);
+        }
+
+        if (Input.GetKey(KeyCode.UpArrow))
+        {
+            //print("Up");
+            rightHandAnchor.transform.Translate(Vector3.up * translateFactor);
+        }
+
+        if (Input.GetKey(KeyCode.LeftArrow))
+        {
+            //print("Left");
+            rightHandAnchor.transform.Translate(Vector3.left * translateFactor);
+
+        }
+
+        if (Input.GetKey(KeyCode.RightArrow))
+        {
+            //print("Right");
+            rightHandAnchor.transform.Translate(Vector3.right * translateFactor);
+        }
+
+        if (Input.GetKey(KeyCode.Z))
+        {
+            //print("Minus");
+            rightHandAnchor.transform.Translate(Vector3.forward * translateFactor);
+            //rightHandAnchor.transform.RotateAroundLocal()
+        }
+
+        if (Input.GetKey(KeyCode.X))
+        {
+            //print("Minus");
+            rightHandAnchor.transform.Translate(Vector3.back * translateFactor);
+        }
+
     }
 
     private void FixedUpdate()
@@ -45,12 +92,12 @@ public class GameControllerScript : MonoBehaviour
         {
             if (Vector3.Distance(solidRightHandController.transform.position, ghostRightHandController.transform.position) < 0.01f)
             {
-                Debug.Log("Snap!");
+                //Debug.Log("Snap!");
             }
         }
         if(isDetached)
         {
-            Debug.Log("isDetached = true");
+            //Debug.Log("isDetached = true");
             if(currDragDir == "x-axis")
             {
                 solidRightHandController.transform.position = new Vector3(ghostRightHandController.transform.position.x, solidRightHandController.transform.position.y, solidRightHandController.transform.position.z);
@@ -76,14 +123,16 @@ public class GameControllerScript : MonoBehaviour
 
     public void doControllerDetachOperations(string tag, Vector3 _detachPt)
     {
+        Debug.Log("isDetached = true, collision with " + tag);
         isDetached = true;
         currDragDir = tag; //x-dir, y-dir or z-dir
-        hookRoot.transform.SetParent(null);
-        originalHookModel.SetActive(false);
-        hookChildWithColliders.GetComponent<Rigidbody>().isKinematic = false;
+        //hookRoot.transform.SetParent(null);
+        //originalHookModel.SetActive(false);
+        //hookChildWithColliders.GetComponent<Rigidbody>().isKinematic = false;
         //righthandController.SetActive(false);
-        righthandController.GetComponent<MeshRenderer>().enabled = false;
+        //righthandController.GetComponent<MeshRenderer>().enabled = false;
         solidRightHandController.SetActive(true);
+        solidRightHandController.transform.SetParent(null);
         ghostRightHandController.SetActive(true);
         snapSlot.SetActive(true);
         checkSnapCondition = true;
@@ -95,18 +144,25 @@ public class GameControllerScript : MonoBehaviour
         return Quaternion.Euler(angles) * (point - pivot) + pivot;
     }
 
-    public void doControllerReattachOperations()
+    public void doControllerReattachOperations(string tag)
     {
+        Debug.Log("isDetached = false, collision with " + tag);
         isDetached = false;
-        originalHookModel.SetActive(true);
-        hookRoot.transform.SetParent(righthandController.transform);
+        //originalHookModel.SetActive(true);
+        /*hookRoot.transform.SetParent(righthandController.transform);
         hookRoot.transform.localPosition = hookRootDefaultPos;
         hookRoot.transform.localRotation = hookRootDefaultRot;
-        hookChildWithColliders.GetComponent<Rigidbody>().isKinematic = true;
+        hookChildWithColliders.GetComponent<Rigidbody>().isKinematic = true;*/
         //righthandController.SetActive(true);
-        righthandController.GetComponent<MeshRenderer>().enabled = true;
+        //righthandController.GetComponent<MeshRenderer>().enabled = true;
         ghostRightHandController.SetActive(false);
-        solidRightHandController.SetActive(false);
+
+
+        //solidRightHandController.SetActive(false);
+        solidRightHandController.transform.SetParent(hookRoot.transform);
+        solidRightHandController.transform.localRotation = solidRightHandControllerDefaultRot;
+        solidRightHandController.transform.localPosition = solidRightHandControllerDefaultPos;
+
         snapSlot.SetActive(false);
         checkSnapCondition = false;
     }

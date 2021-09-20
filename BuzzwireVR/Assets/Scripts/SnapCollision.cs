@@ -20,10 +20,10 @@ public class SnapCollision : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        Debug.Log("Snap!");
+        //Debug.Log("Snap!");
 
-        gameController.GetComponent<GameControllerScript>().doControllerReattachOperations();
-        gameController.GetComponent<GameControllerScript>().stopMistakeFeedback();
+        //gameController.GetComponent<GameControllerScript>().doControllerReattachOperations();
+        //gameController.GetComponent<GameControllerScript>().stopMistakeFeedback();
 
     }
 }
