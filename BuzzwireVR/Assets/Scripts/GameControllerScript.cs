@@ -5,21 +5,21 @@ using UnityEngine;
 public class GameControllerScript : MonoBehaviour
 {
     public GameObject hookRoot;
-    public GameObject originalHookModel;
-    public GameObject hookChildWithColliders;
+    //public GameObject originalHookModel;
+    //public GameObject hookChildWithColliders;
 
     public Quaternion hookRootDefaultRot;
     public Vector3 hookRootDefaultPos;
     public Quaternion solidRightHandControllerDefaultRot;
     public Vector3 solidRightHandControllerDefaultPos;
 
-    public GameObject righthandController;
+    //public GameObject righthandController;
     public GameObject ghostRightHandController;
     public GameObject solidRightHandController;
-    public GameObject snapSlot;
+    //public GameObject snapSlot;
     public GameObject rightHandAnchor;
-    bool checkSnapCondition;
-    Vector3 detachPt;
+    //bool checkSnapCondition;
+   //Vector3 detachPt;
 
     bool isDetached = false;
     enum Direction { xDir, yDir, zDir};
@@ -33,12 +33,12 @@ public class GameControllerScript : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        hookRootDefaultRot = hookRoot.transform.localRotation;
-        hookRootDefaultPos = hookRoot.transform.localPosition;
+        //hookRootDefaultRot = hookRoot.transform.localRotation;
+        //hookRootDefaultPos = hookRoot.transform.localPosition;
         solidRightHandControllerDefaultRot = solidRightHandController.transform.localRotation;
         solidRightHandControllerDefaultPos = solidRightHandController.transform.localPosition;
 
-        checkSnapCondition = false;
+        //checkSnapCondition = false;
     }
 
     float translateFactor = 0.001f;
@@ -88,13 +88,14 @@ public class GameControllerScript : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (checkSnapCondition)
+        /*if (checkSnapCondition)
         {
             if (Vector3.Distance(solidRightHandController.transform.position, ghostRightHandController.transform.position) < 0.01f)
             {
                 //Debug.Log("Snap!");
             }
-        }
+        }*/
+
         if(isDetached)
         {
             //Debug.Log("isDetached = true");
@@ -134,9 +135,9 @@ public class GameControllerScript : MonoBehaviour
         solidRightHandController.SetActive(true);
         solidRightHandController.transform.SetParent(null);
         ghostRightHandController.SetActive(true);
-        snapSlot.SetActive(true);
-        checkSnapCondition = true;
-        detachPt = _detachPt;
+        //snapSlot.SetActive(true);
+        //checkSnapCondition = true;
+        //detachPt = _detachPt;
     }
 
     public Vector3 rotatePointAroundPivot(Vector3 point, Vector3 pivot, Vector3 angles)
@@ -163,8 +164,8 @@ public class GameControllerScript : MonoBehaviour
         solidRightHandController.transform.localRotation = solidRightHandControllerDefaultRot;
         solidRightHandController.transform.localPosition = solidRightHandControllerDefaultPos;
 
-        snapSlot.SetActive(false);
-        checkSnapCondition = false;
+        //snapSlot.SetActive(false);
+        //checkSnapCondition = false;
     }
 
     public void triggerMistakeFeedback()
