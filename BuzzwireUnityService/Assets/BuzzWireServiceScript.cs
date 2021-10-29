@@ -17,7 +17,7 @@ public class BuzzWireServiceScript : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        feedbackEnabled = true;
+        feedbackEnabled = false;
         serialController = GameObject.Find("SerialController").GetComponent<SerialController>();
         client = new SimpleTcpClient().Connect("127.0.0.1", 8089);
     }
@@ -38,7 +38,7 @@ public class BuzzWireServiceScript : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
 
         if (Input.GetKeyUp(KeyCode.A))
@@ -62,7 +62,7 @@ public class BuzzWireServiceScript : MonoBehaviour
             Debug.Log("Message arrived: " + message);
             if (message == "1")
             {
-                //if (feedbackEnabled)
+                if (feedbackEnabled)
                 {
                     beepsound.mute = false;
                     //beepsound.Play();

@@ -1,9 +1,14 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using SimpleTCP;
 
 public class GameControllerScript : MonoBehaviour
 {
+    SimpleTcpClient client;
+
+    public GameObject env;
+    public AudioSource beepsound;
     public GameObject hookRoot;
     //public GameObject originalHookModel;
     //public GameObject hookChildWithColliders;
@@ -29,15 +34,17 @@ public class GameControllerScript : MonoBehaviour
     public Material lightOffMat;
     public Material lightOnMat;
 
-    public GameObject[] lights;
+    public GameObject mistakeLight;
+    public GameObject startLight;
     // Start is called before the first frame update
     void Start()
     {
+        beepsound.mute = true;
         //hookRootDefaultRot = hookRoot.transform.localRotation;
         //hookRootDefaultPos = hookRoot.transform.localPosition;
         solidRightHandControllerDefaultRot = solidRightHandController.transform.localRotation;
         solidRightHandControllerDefaultPos = solidRightHandController.transform.localPosition;
-
+        client = new SimpleTcpClient().Connect("127.0.0.1", 8089);
         //checkSnapCondition = false;
     }
 
@@ -86,6 +93,16 @@ public class GameControllerScript : MonoBehaviour
 
     }
 
+    public void gotoNextLevel()
+    {
+        env.transform.Rotate(0, -90, 0);
+    }
+
+    public void stopFeedback()
+    {
+        
+    }
+
     private void FixedUpdate()
     {
         /*if (checkSnapCondition)
@@ -98,8 +115,10 @@ public class GameControllerScript : MonoBehaviour
 
         if(isDetached)
         {
+            StartCoroutine(Haptics(1, 1, 0.1f, true, false));
+            client.Write("M;1;;;BuzzWireHit;Buzz wire was hit\r\n");
             //Debug.Log("isDetached = true");
-            if(currDragDir == "x-axis")
+            if (currDragDir == "x-axis")
             {
                 solidRightHandController.transform.position = new Vector3(ghostRightHandController.transform.position.x, solidRightHandController.transform.position.y, solidRightHandController.transform.position.z);
                 //solidRightHandController.transform.rotation = rotatePointAroundPivot()
@@ -170,17 +189,32 @@ public class GameControllerScript : MonoBehaviour
 
     public void triggerMistakeFeedback()
     {
-        foreach(GameObject light in lights)
-        {
-            light.GetComponent<MeshRenderer>().material = lightOnMat;
-        }
+        //StartCoroutine(Haptics(1, 1, 0.1f, true, false));
+        beepsound.mute = false;
+        //mistakeLight.GetComponent<MeshRenderer>().material = lightOnMat;
+        mistakeLight.SetActive(true);
+
     }
 
     public void stopMistakeFeedback()
     {
-        foreach (GameObject light in lights)
+        beepsound.mute = true;
+        //StartCoroutine(Haptics(1, 1, 0.1f, true, false));
+        /*foreach (GameObject light in lights)
         {
             light.GetComponent<MeshRenderer>().material = lightOffMat;
-        }
+        }*/
+        mistakeLight.SetActive(false);
+    }
+
+    IEnumerator Haptics(float frequency, float amplitude, float duration, bool rightHand, bool leftHand)
+    {
+        if (rightHand) OVRInput.SetControllerVibration(frequency, amplitude, OVRInput.Controller.RTouch);
+        if (leftHand) OVRInput.SetControllerVibration(frequency, amplitude, OVRInput.Controller.LTouch);
+
+        yield return new WaitForSeconds(duration);
+
+        if (rightHand) OVRInput.SetControllerVibration(0, 0, OVRInput.Controller.RTouch);
+        if (leftHand) OVRInput.SetControllerVibration(0, 0, OVRInput.Controller.LTouch);
     }
 }
