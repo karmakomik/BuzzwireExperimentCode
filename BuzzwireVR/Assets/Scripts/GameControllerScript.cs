@@ -24,11 +24,16 @@ public class GameControllerScript : MonoBehaviour
     //public GameObject snapSlot;
     public GameObject rightHandAnchor;
     //bool checkSnapCondition;
-   //Vector3 detachPt;
+    Vector3 detachPt;
+    Vector3 offsetGhostDistance;
+    Vector3 oldGhostPos;
+    GameObject detachPivot;
 
     bool isDetached = false;
     enum Direction { xDir, yDir, zDir};
+    CapsuleCollider currCollider;
     string currDragDir;
+    public Vector3 offsetPivotAng;
 
     [Header("Materials")]
     public Material lightOffMat;
@@ -44,8 +49,13 @@ public class GameControllerScript : MonoBehaviour
         //hookRootDefaultPos = hookRoot.transform.localPosition;
         solidRightHandControllerDefaultRot = solidRightHandController.transform.localRotation;
         solidRightHandControllerDefaultPos = solidRightHandController.transform.localPosition;
-        client = new SimpleTcpClient().Connect("127.0.0.1", 8089);
+        detachPivot = new GameObject("DetachPivot");        
+        oldGhostPos = ghostRightHandController.transform.position;
         //checkSnapCondition = false;
+
+
+
+        client = new SimpleTcpClient().Connect("127.0.0.1", 8089);
     }
 
     float translateFactor = 0.001f;
@@ -113,26 +123,41 @@ public class GameControllerScript : MonoBehaviour
             }
         }*/
 
-        if(isDetached)
+        offsetGhostDistance = ghostRightHandController.transform.position - oldGhostPos;
+        oldGhostPos = ghostRightHandController.transform.position;
+
+        if (isDetached)
         {
             StartCoroutine(Haptics(1, 1, 0.1f, true, false));
-            client.Write("M;1;;;BuzzWireHit;Buzz wire was hit\r\n");
+            if(client!=null)
+                client.Write("M;1;;;BuzzWireHit;Buzz wire was hit\r\n");
             //Debug.Log("isDetached = true");
             if (currDragDir == "x-axis")
             {
-                solidRightHandController.transform.position = new Vector3(ghostRightHandController.transform.position.x, solidRightHandController.transform.position.y, solidRightHandController.transform.position.z);
-                //solidRightHandController.transform.rotation = rotatePointAroundPivot()
-                //solidRightHandController.transform.rotation = Quaternion.Euler(new Vector3(0,0,ghostRightHandController.transform.rotation.eulerAngles.z));
+                //Vector3 projectedPos = new Vector3(ghostRightHandController.transform.position.x, solidRightHandController.transform.position.y, solidRightHandController.transform.position.z);
+                //if (projectedPos.x < currCollider.bounds.max.x && projectedPos.x > currCollider.bounds.min.x)
+                //    solidRightHandController.transform.position = projectedPos;
+                Vector3 projectedPos = detachPivot.transform.position + new Vector3(offsetGhostDistance.x, 0, 0);
+                if (projectedPos.x < currCollider.bounds.max.x && projectedPos.x > currCollider.bounds.min.x)
+                    detachPivot.transform.position = projectedPos;                   
+
+                //detachPivot.transform.eulerAngles = ghostRightHandController.transform.eulerAngles;// + offsetPivotAng;
+ ;
             }
             else if (currDragDir == "y-axis")
             {
-                solidRightHandController.transform.position = new Vector3(solidRightHandController.transform.position.x, ghostRightHandController.transform.position.y, solidRightHandController.transform.position.z);
-
+                //solidRightHandController.transform.position = new Vector3(solidRightHandController.transform.position.x, ghostRightHandController.transform.position.y, solidRightHandController.transform.position.z);
+                Vector3 projectedPos = detachPivot.transform.position + new Vector3(0,offsetGhostDistance.y, 0);
+                if (projectedPos.y < currCollider.bounds.max.y && projectedPos.y > currCollider.bounds.min.y)
+                    detachPivot.transform.position = projectedPos;
+                //detachPivot.transform.eulerAngles = ghostRightHandController.transform.eulerAngles;
             }
             else if (currDragDir == "z-axis")
             {
-                solidRightHandController.transform.position = new Vector3(solidRightHandController.transform.position.x, solidRightHandController.transform.position.y, ghostRightHandController.transform.position.z);
-
+                //solidRightHandController.transform.position = new Vector3(solidRightHandController.transform.position.x, solidRightHandController.transform.position.y, ghostRightHandController.transform.position.z);
+                Vector3 projectedPos = detachPivot.transform.position + new Vector3(0, 0, offsetGhostDistance.z);
+                if (projectedPos.z < currCollider.bounds.max.z && projectedPos.z > currCollider.bounds.min.z)
+                    detachPivot.transform.position = projectedPos;
             }
         }
         else
@@ -141,8 +166,9 @@ public class GameControllerScript : MonoBehaviour
         }
     }
 
-    public void doControllerDetachOperations(string tag, Vector3 _detachPt)
+    public void doControllerDetachOperations(CapsuleCollider _collider, string tag, Vector3 _detachPt)
     {
+        currCollider = _collider;
         Debug.Log("isDetached = true, collision with " + tag);
         isDetached = true;
         currDragDir = tag; //x-dir, y-dir or z-dir
@@ -151,12 +177,15 @@ public class GameControllerScript : MonoBehaviour
         //hookChildWithColliders.GetComponent<Rigidbody>().isKinematic = false;
         //righthandController.SetActive(false);
         //righthandController.GetComponent<MeshRenderer>().enabled = false;
-        solidRightHandController.SetActive(true);
-        solidRightHandController.transform.SetParent(null);
-        ghostRightHandController.SetActive(true);
+
         //snapSlot.SetActive(true);
         //checkSnapCondition = true;
-        //detachPt = _detachPt;
+        detachPt = _detachPt;
+        detachPivot.transform.position = detachPt;
+
+        solidRightHandController.SetActive(true);
+        solidRightHandController.transform.SetParent(detachPivot.transform);
+        ghostRightHandController.SetActive(true);
     }
 
     public Vector3 rotatePointAroundPivot(Vector3 point, Vector3 pivot, Vector3 angles)
