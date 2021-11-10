@@ -4,27 +4,36 @@ using UnityEngine;
 using System.IO.Ports;
 using System;
 using SimpleTCP;
+using UnityEngine.UI;
 
 public class BuzzWireServiceScript : MonoBehaviour
 {
     public AudioSource beepsound;
-    public SerialController serialController;
+    public AudioSource goSound;
+    public SerialController testArduinoSerialController;
+    public SerialController trainingArduinoSerialController;
     SimpleTcpClient client;
     string prevMessage;
-    bool feedbackEnabled;
+    bool trainingPhase;
+
+    //public GameObject testArduinoObj;
+    //public GameObject trainingArduinoObj;
+
+    public Image leftSwitchIndicator, rightSwitchIndicator;
+    public GameObject baselineOverIndicator;
+    public GameObject restOverIndicator;
 
     public string receivedstring;
     // Start is called before the first frame update
     void Start()
     {
-        feedbackEnabled = false;
-        serialController = GameObject.Find("SerialController").GetComponent<SerialController>();
-        client = new SimpleTcpClient().Connect("127.0.0.1", 8089);
-    }
-
-    public void toggleFeedback()
-    {
-        feedbackEnabled = !feedbackEnabled;
+        trainingPhase = false;
+        beepsound.mute = true;
+        //testArduinoSerialController = testArduinoObj.GetComponent<SerialController>();
+        //testArduinoSerialController = trainingArduinoObj.GetComponent<SerialController>();
+        client = new SimpleTcpClient().Connect("127.0.0.1", 8089); //For imotions
+        leftSwitchIndicator.color = Color.gray;
+        rightSwitchIndicator.color = Color.gray;
     }
 
     public void startTask()
@@ -37,6 +46,127 @@ public class BuzzWireServiceScript : MonoBehaviour
         client.Write("M;1;;;EndTask;Task has ended\r\n");
     }
 
+    public void startLevel(int level)
+    {
+
+        trainingPhase = true;
+        if (level == 1)
+        {
+            if (client != null)
+                client.Write("M;1;;;level_1_started;Level 1 started\r\n");
+        }
+        if (level == 2)
+        {
+            if (client != null)
+                client.Write("M;1;;;level_2_started;Level 2 started\r\n");
+        }
+        if (level == 3)
+        {
+            if (client != null)
+                client.Write("M;1;;;level_3_started;Level 3 started\r\n");
+        }
+        if (level == 4)
+        {
+            if (client != null)
+                client.Write("M;1;;;level_4_started;Level 4 started\r\n");
+        }
+    }
+
+    public void startTest(int stage)
+    {
+        if (stage == 1)
+        {
+            trainingPhase = false;
+            if (client != null)
+                client.Write("M;1;;;pre_test_started;Test (pre) started\r\n");
+        }
+        if (stage == 2)
+        {
+            trainingPhase = false;
+            if (client != null)
+                client.Write("M;1;;;post_test_started;Test (post) started\r\n");
+        }
+    }
+
+    public void startBaseline()
+    {
+        if (client != null)
+            client.Write("M;1;;;baseline_started;Baseline started\r\n");
+
+        StartCoroutine(startBaselineCounterCoroutine());
+    }
+
+    public IEnumerator startBaselineCounterCoroutine()
+    {
+        Debug.Log("Baseline started");
+        int seconds = 180;
+        while (seconds > 0)
+        {
+            yield return new WaitForSecondsRealtime(1);
+            baselineOverIndicator.GetComponentInChildren<Text>().text = "" + seconds + "s";
+            seconds--;
+        }
+        if (client != null)
+            client.Write("M;1;;;baseline_over;Baseline over\r\n");
+
+        //baselineOverIndicator.SetActive(true);
+        baselineOverIndicator.GetComponentInChildren<Text>().text = "Baseline over";
+        //Debug.Log("delayResetNewTasksFlag");
+    }
+
+    public void startRest()
+    {
+        StartCoroutine(startRestCoroutine());
+    }
+
+    public IEnumerator startRestCoroutine()
+    {
+        int seconds = 30;
+        while (seconds > 0)
+        {
+            yield return new WaitForSecondsRealtime(1);
+            restOverIndicator.GetComponentInChildren<Text>().text = "" + seconds + "s";
+            seconds--;
+        }
+        goSound.Play();
+        restOverIndicator.GetComponentInChildren<Text>().text = "Rest over";
+        //Debug.Log("delayResetNewTasksFlag");
+    }
+
+    /*public void stopBaseline()
+    {
+        if (client != null)
+            client.Write("M;1;;;baseline_stopped;Baseline stopped\r\n");
+    }*/
+
+    public void startRest(int level)
+    {
+        if (level == 1)
+        {
+            startRest();
+            if (client != null)
+                client.Write("M;1;;;level_1_rest_started;Level 1 rest started\r\n");
+        }
+        if (level == 2)
+        {
+            startRest();
+            if (client != null)
+                client.Write("M;1;;;level_2_rest_started;Level 2 rest started\r\n");
+        }
+        if (level == 3)
+        {
+            startRest();
+            if (client != null)
+                client.Write("M;1;;;level_3_rest_started;Level 3 rest started\r\n");
+        }
+        if (level == 4)
+        {
+            startRest();
+            if (client != null)
+                client.Write("M;1;;;level_4_rest_started;Level 4 rest started\r\n");
+        }
+    }
+
     // Update is called once per frame
     void FixedUpdate()
     {
@@ -47,10 +177,24 @@ public class BuzzWireServiceScript : MonoBehaviour
             //StartCoroutine(Haptics(1, 1, 0.1f, true, false));
         }
 
-        string message = serialController.ReadSerialMessage();
+        string message;
+
+        if (trainingPhase)
+        {
+            message = trainingArduinoSerialController.ReadSerialMessage();
+        }
+        else
+        {
+            message = testArduinoSerialController.ReadSerialMessage();
+        }
 
         if (message == null)
+        {
+            leftSwitchIndicator.color = Color.gray;
+            rightSwitchIndicator.color = Color.gray;
+            beepsound.mute = true;
             return;
+        }
 
         // Check if the message is plain data or a connect/disconnect event.
         if (ReferenceEquals(message, SerialController.SERIAL_DEVICE_CONNECTED))
@@ -59,25 +203,44 @@ public class BuzzWireServiceScript : MonoBehaviour
             Debug.Log("Connection attempt failed or disconnection detected");
         else
         {
-            Debug.Log("Message arrived: " + message);
+            //Debug.Log("Message arrived: " + message);
             if (message == "1")
             {
-                if (feedbackEnabled)
+                if (trainingPhase)
                 {
                     beepsound.mute = false;
                     //beepsound.Play();
                     //beepsound.PlayOneShot(beepsound.GetComponent<AudioClip>());
                     StartCoroutine(Haptics(1, 1, 0.1f, true, false));
-                    
                 }
-                client.Write("M;1;;;BuzzWireHit;Buzz wire was hit\r\n");
+
+                if (client != null)
+                    client.Write("M;1;;;BuzzWireHit;Buzz wire was hit\r\n");
             }
-            else if (message == "0")
+            else
             {
                 beepsound.mute = true;
             }
-        }
 
+            if (message == "+")
+            {
+                leftSwitchIndicator.color = Color.green;
+                if (client != null)
+                    client.Write("M;1;;;LeftSwitchPressed;Left Switch Pressed\r\n");
+            }
+            else if (message == "*")
+            {
+                rightSwitchIndicator.color = Color.green;
+                if (client != null)
+                    client.Write("M;1;;;RightSwitchPressed;Right Switch Pressed\r\n");
+            }
+            else
+            {
+                leftSwitchIndicator.color = Color.gray;
+                rightSwitchIndicator.color = Color.gray;
+            }
+            message = "";
+        }
     }
 
 

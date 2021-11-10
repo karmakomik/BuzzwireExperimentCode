@@ -1,60 +1,44 @@
-/*
-  Button
-
-  Turns on and off a light emitting diode(LED) connected to digital pin 13,
-  when pressing a pushbutton attached to pin 2.
-
-  The circuit:
-  - LED attached from pin 13 to ground
-  - pushbutton attached to pin 2 from +5V
-  - 10K resistor attached to pin 2 from ground
-
-  - Note: on most Arduinos there is already an LED on the board
-    attached to pin 13.
-
-  created 2005
-  by DojoDave <http://www.0j0.org>
-  modified 30 Aug 2011
-  by Tom Igoe
-
-  This example code is in the public domain.
-
-  http://www.arduino.cc/en/Tutorial/Button
-*/
-
 // constants won't change. They're used here to set pin numbers:
-const int buttonPin = 2;     // the number of the pushbutton pin
-const int ledPin =  13;      // the number of the LED pin
+     // the number of the pushbutton pin
+const int left_rest_pin = 3; 
+const int right_rest_pin = 2; 
+const int mistake_pin = 5; 
 
 // variables will change:
-int buttonState = 0;         // variable for reading the pushbutton status
+
+int left_rest_state = 0; 
+int right_rest_state = 0; 
+int mistake_state = 0; 
 
 void setup() 
 {
-  Serial.begin(9600);
-  // initialize the LED pin as an output:
-  pinMode(ledPin, OUTPUT);
-  // initialize the pushbutton pin as an input:
-  pinMode(buttonPin, INPUT);
-}
+  Serial.begin(9600); 
 
+  pinMode(left_rest_pin, INPUT);
+  pinMode(right_rest_pin, INPUT);
+  pinMode(mistake_pin, INPUT);
+}
 
 void loop() 
 {
   // read the state of the pushbutton value:
-  buttonState = digitalRead(buttonPin);
-
+  left_rest_state = digitalRead(left_rest_pin);
+  right_rest_state = digitalRead(right_rest_pin);
+  mistake_state = digitalRead(mistake_pin);
+  
   // check if the pushbutton is pressed. If it is, the buttonState is HIGH:
-  if (buttonState == HIGH) 
+  if (left_rest_state == HIGH) 
   {
-    // turn LED on:
-    digitalWrite(ledPin, HIGH);
+    Serial.println("+");
+  } 
+
+  if (right_rest_state == HIGH) 
+  {
+    Serial.println("*");
+  } 
+
+  if (mistake_state == HIGH) 
+  {
     Serial.println("1");
-  }
-  else
-  {
-    // turn LED off:
-    digitalWrite(ledPin, LOW);
-    Serial.println("0");
-  }
+  }   
 }
