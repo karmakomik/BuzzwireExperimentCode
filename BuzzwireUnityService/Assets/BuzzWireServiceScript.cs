@@ -19,9 +19,10 @@ public class BuzzWireServiceScript : MonoBehaviour
     //public GameObject testArduinoObj;
     //public GameObject trainingArduinoObj;
 
-    public Image leftSwitchIndicator, rightSwitchIndicator;
+    public Image leftSwitchIndicator, rightSwitchIndicator, mistakeIndicator;
     public GameObject baselineOverIndicator;
     public GameObject restOverIndicator;
+    public TMPro.TMP_Text modeTxt;
 
     public string receivedstring;
     // Start is called before the first frame update
@@ -34,6 +35,7 @@ public class BuzzWireServiceScript : MonoBehaviour
         client = new SimpleTcpClient().Connect("127.0.0.1", 8089); //For imotions
         leftSwitchIndicator.color = Color.gray;
         rightSwitchIndicator.color = Color.gray;
+        mistakeIndicator.color = Color.gray;
     }
 
     public void startTask()
@@ -48,7 +50,7 @@ public class BuzzWireServiceScript : MonoBehaviour
 
     public void startLevel(int level)
     {
-
+        modeTxt.text = "Training Mode On";
         trainingPhase = true;
         if (level == 1)
         {
@@ -74,6 +76,7 @@ public class BuzzWireServiceScript : MonoBehaviour
 
     public void startTest(int stage)
     {
+        modeTxt.text = "Test Mode On";
         if (stage == 1)
         {
             trainingPhase = false;
@@ -192,6 +195,7 @@ public class BuzzWireServiceScript : MonoBehaviour
         {
             leftSwitchIndicator.color = Color.gray;
             rightSwitchIndicator.color = Color.gray;
+            mistakeIndicator.color = Color.gray;
             beepsound.mute = true;
             return;
         }
@@ -206,6 +210,7 @@ public class BuzzWireServiceScript : MonoBehaviour
             //Debug.Log("Message arrived: " + message);
             if (message == "1")
             {
+                mistakeIndicator.color = Color.red;
                 if (trainingPhase)
                 {
                     beepsound.mute = false;
