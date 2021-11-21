@@ -8,6 +8,8 @@ TagManager:
   - x-axis
   - y-axis
   - z-axis
+  - StartZone
+  - StopZone
   layers:
   - Default
   - TransparentFX

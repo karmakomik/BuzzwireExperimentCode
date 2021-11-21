@@ -2,13 +2,20 @@
 using System.Collections.Generic;
 using UnityEngine;
 using SimpleTCP;
+using UnityEngine.UI;
 
 public class GameControllerScript : MonoBehaviour
 {
-    SimpleTcpClient client;
+    public SimpleTcpClient client;
+
+    public int currLevel;
+
+    public Vector3[] startPositions;
+    public Vector3[] stopPositions;
 
     public GameObject env;
     public AudioSource beepsound;
+    public AudioSource goSound;
     public GameObject hookRoot;
     //public GameObject originalHookModel;
     //public GameObject hookChildWithColliders;
@@ -19,6 +26,7 @@ public class GameControllerScript : MonoBehaviour
     public Vector3 solidRightHandControllerDefaultPos;
 
     //public GameObject righthandController;
+    public GameObject startStopRefController;
     public GameObject ghostRightHandController;
     public GameObject solidRightHandController;
     //public GameObject snapSlot;
@@ -29,32 +37,51 @@ public class GameControllerScript : MonoBehaviour
     Vector3 oldGhostPos;
     GameObject detachPivot;
 
+    public SerialController testArduinoSerialController;
+    
+    //UI
+    public TMPro.TMP_Text modeTxt;
+    public TMPro.TMP_Text iMotionsConnText;
+    public Image leftSwitchIndicator, rightSwitchIndicator, mistakeIndicator;
+    public GameObject baselineOverIndicator;
+    public GameObject restOverIndicator;
+
+    public bool feedbackEnabled = false;
+
     bool isDetached = false;
     enum Direction { xDir, yDir, zDir};
     CapsuleCollider currCollider;
     string currDragDir;
     public Vector3 offsetPivotAng;
 
+    bool trainingPhase;
+
     [Header("Materials")]
     public Material lightOffMat;
     public Material lightOnMat;
 
     public GameObject mistakeLight;
-    public GameObject startLight;
+
     // Start is called before the first frame update
     void Start()
     {
+        trainingPhase = false;
         beepsound.mute = true;
-        //hookRootDefaultRot = hookRoot.transform.localRotation;
-        //hookRootDefaultPos = hookRoot.transform.localPosition;
+        currLevel = 1;
+
         solidRightHandControllerDefaultRot = solidRightHandController.transform.localRotation;
         solidRightHandControllerDefaultPos = solidRightHandController.transform.localPosition;
-        detachPivot = new GameObject("DetachPivot");        
+        detachPivot = new GameObject("DetachPivot");
+        detachPivot.transform.position = Vector3.zero;
         oldGhostPos = ghostRightHandController.transform.position;
+
+        startStopRefController.transform.position = startPositions[currLevel - 1];
+        solidRightHandController.SetActive(false);
+        ghostRightHandController.SetActive(true);
+
         //checkSnapCondition = false;
-
-
-
+        //doControllerDetachOperations(null, "",  startPositions[currLevel - 1], true);
+        //Debug.Log("startPositions[currLevel - 1].transform.position" + transform.TransformPoint(startPositions[currLevel - 1]));
         client = new SimpleTcpClient().Connect("127.0.0.1", 8089);
     }
 
@@ -63,48 +90,103 @@ public class GameControllerScript : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKey(KeyCode.DownArrow))
-        {
-            //print("Down");
-            rightHandAnchor.transform.Translate(Vector3.down * translateFactor);
-        }
 
-        if (Input.GetKey(KeyCode.UpArrow))
-        {
-            //print("Up");
-            rightHandAnchor.transform.Translate(Vector3.up * translateFactor);
-        }
-
-        if (Input.GetKey(KeyCode.LeftArrow))
-        {
-            //print("Left");
-            rightHandAnchor.transform.Translate(Vector3.left * translateFactor);
-
-        }
-
-        if (Input.GetKey(KeyCode.RightArrow))
-        {
-            //print("Right");
-            rightHandAnchor.transform.Translate(Vector3.right * translateFactor);
-        }
-
-        if (Input.GetKey(KeyCode.Z))
-        {
-            //print("Minus");
-            rightHandAnchor.transform.Translate(Vector3.forward * translateFactor);
-            //rightHandAnchor.transform.RotateAroundLocal()
-        }
-
-        if (Input.GetKey(KeyCode.X))
-        {
-            //print("Minus");
-            rightHandAnchor.transform.Translate(Vector3.back * translateFactor);
-        }
 
     }
 
+    public void startBaseline()
+    {
+        if (client != null)
+            client.Write("M;1;;;baseline_started;Baseline started\r\n");
+
+        StartCoroutine(startBaselineCounterCoroutine());
+    }
+
+    public IEnumerator startBaselineCounterCoroutine()
+    {
+        Debug.Log("Baseline started");
+        int seconds = 180;
+        while (seconds > 0)
+        {
+            yield return new WaitForSecondsRealtime(1);
+            baselineOverIndicator.GetComponentInChildren<Text>().text = "" + seconds + "s";
+            seconds--;
+        }
+        if (client != null)
+            client.Write("M;1;;;baseline_over;Baseline over\r\n");
+
+        //baselineOverIndicator.SetActive(true);
+        baselineOverIndicator.GetComponentInChildren<Text>().text = "Baseline over";
+        //Debug.Log("delayResetNewTasksFlag");
+    }
+
+    public void startLevel(int level)
+    {
+        modeTxt.text = "Training Mode On";
+        trainingPhase = true;
+        if (level == 1)
+        {
+            if (client != null)
+                client.Write("M;1;;;level_1_started;Level 1 started\r\n");
+        }
+        if (level == 2)
+        {
+            if (client != null)
+                client.Write("M;1;;;level_2_started;Level 2 started\r\n");
+        }
+        if (level == 3)
+        {
+            if (client != null)
+                client.Write("M;1;;;level_3_started;Level 3 started\r\n");
+        }
+        if (level == 4)
+        {
+            if (client != null)
+                client.Write("M;1;;;level_4_started;Level 4 started\r\n");
+        }
+    }
+
+    public void startTest(int stage)
+    {
+        modeTxt.text = "Test Mode On";
+        if (stage == 1)
+        {
+            trainingPhase = false;
+            if (client != null)
+                client.Write("M;1;;;pre_test_started;Test (pre) started\r\n");
+        }
+        if (stage == 2)
+        {
+            trainingPhase = false;
+            if (client != null)
+                client.Write("M;1;;;post_test_started;Test (post) started\r\n");
+        }
+    }
+
+    public void startRest()
+    {
+        StartCoroutine(startRestCoroutine());
+    }
+
+    public IEnumerator startRestCoroutine()
+    {
+        int seconds = 30;
+        while (seconds > 0)
+        {
+            yield return new WaitForSecondsRealtime(1);
+            restOverIndicator.GetComponentInChildren<Text>().text = "" + seconds + "s";
+            seconds--;
+        }
+        goSound.Play();
+        restOverIndicator.GetComponentInChildren<Text>().text = "Rest over";
+        //Debug.Log("delayResetNewTasksFlag");
+    }
+    
     public void gotoNextLevel()
     {
+        ++currLevel;
+        if (currLevel == 5) currLevel = 1;
+        startStopRefController.transform.position = startPositions[currLevel - 1];
         env.transform.Rotate(0, -90, 0);
     }
 
@@ -115,6 +197,18 @@ public class GameControllerScript : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if(client == null)
+        {
+            iMotionsConnText.color = Color.red;
+            iMotionsConnText.text = "iMotions Disconnected";            
+        }
+        else
+        {
+            iMotionsConnText.color = Color.green;
+            iMotionsConnText.text = "iMotions Connected";
+        }
+
+
         /*if (checkSnapCondition)
         {
             if (Vector3.Distance(solidRightHandController.transform.position, ghostRightHandController.transform.position) < 0.01f)
@@ -126,44 +220,114 @@ public class GameControllerScript : MonoBehaviour
         offsetGhostDistance = ghostRightHandController.transform.position - oldGhostPos;
         oldGhostPos = ghostRightHandController.transform.position;
 
-        if (isDetached)
-        {
-            StartCoroutine(Haptics(1, 1, 0.1f, true, false));
-            if(client!=null)
-                client.Write("M;1;;;BuzzWireHit;Buzz wire was hit\r\n");
-            //Debug.Log("isDetached = true");
-            if (currDragDir == "x-axis")
-            {
-                //Vector3 projectedPos = new Vector3(ghostRightHandController.transform.position.x, solidRightHandController.transform.position.y, solidRightHandController.transform.position.z);
-                //if (projectedPos.x < currCollider.bounds.max.x && projectedPos.x > currCollider.bounds.min.x)
-                //    solidRightHandController.transform.position = projectedPos;
-                Vector3 projectedPos = detachPivot.transform.position + new Vector3(offsetGhostDistance.x, 0, 0);
-                if (projectedPos.x < currCollider.bounds.max.x && projectedPos.x > currCollider.bounds.min.x)
-                    detachPivot.transform.position = projectedPos;                   
+        string message;
 
-                //detachPivot.transform.eulerAngles = ghostRightHandController.transform.eulerAngles;// + offsetPivotAng;
- ;
-            }
-            else if (currDragDir == "y-axis")
+        if (trainingPhase)
+        {
+            message = null;
+            if (isDetached && feedbackEnabled)
             {
-                //solidRightHandController.transform.position = new Vector3(solidRightHandController.transform.position.x, ghostRightHandController.transform.position.y, solidRightHandController.transform.position.z);
-                Vector3 projectedPos = detachPivot.transform.position + new Vector3(0,offsetGhostDistance.y, 0);
-                if (projectedPos.y < currCollider.bounds.max.y && projectedPos.y > currCollider.bounds.min.y)
-                    detachPivot.transform.position = projectedPos;
-                //detachPivot.transform.eulerAngles = ghostRightHandController.transform.eulerAngles;
+                StartCoroutine(Haptics(1, 1, 0.1f, true, false));
+                if(client!=null)
+                    client.Write("M;1;;;BuzzWireHit;Buzz wire was hit\r\n");
+                //Debug.Log("isDetached = true");
+                if (currDragDir == "x-axis")
+                {
+                    //Vector3 projectedPos = new Vector3(ghostRightHandController.transform.position.x, solidRightHandController.transform.position.y, solidRightHandController.transform.position.z);
+                    //if (projectedPos.x < currCollider.bounds.max.x && projectedPos.x > currCollider.bounds.min.x)
+                    //    solidRightHandController.transform.position = projectedPos;
+                    Vector3 projectedPos = detachPivot.transform.position + new Vector3(offsetGhostDistance.x, 0, 0);
+                    if (projectedPos.x < currCollider.bounds.max.x && projectedPos.x > currCollider.bounds.min.x)
+                        detachPivot.transform.position = projectedPos;                   
+
+                    //detachPivot.transform.eulerAngles = ghostRightHandController.transform.eulerAngles;// + offsetPivotAng;
+     
+                }
+                else if (currDragDir == "y-axis")
+                {
+                    //solidRightHandController.transform.position = new Vector3(solidRightHandController.transform.position.x, ghostRightHandController.transform.position.y, solidRightHandController.transform.position.z);
+                    Vector3 projectedPos = detachPivot.transform.position + new Vector3(0,offsetGhostDistance.y, 0);
+                    if (projectedPos.y < currCollider.bounds.max.y && projectedPos.y > currCollider.bounds.min.y)
+                        detachPivot.transform.position = projectedPos;
+                    //detachPivot.transform.eulerAngles = ghostRightHandController.transform.eulerAngles;
+                }
+                else if (currDragDir == "z-axis")
+                {
+                    //solidRightHandController.transform.position = new Vector3(solidRightHandController.transform.position.x, solidRightHandController.transform.position.y, ghostRightHandController.transform.position.z);
+                    Vector3 projectedPos = detachPivot.transform.position + new Vector3(0, 0, offsetGhostDistance.z);
+                    if (projectedPos.z < currCollider.bounds.max.z && projectedPos.z > currCollider.bounds.min.z)
+                        detachPivot.transform.position = projectedPos;
+                }
             }
-            else if (currDragDir == "z-axis")
+            else
             {
-                //solidRightHandController.transform.position = new Vector3(solidRightHandController.transform.position.x, solidRightHandController.transform.position.y, ghostRightHandController.transform.position.z);
-                Vector3 projectedPos = detachPivot.transform.position + new Vector3(0, 0, offsetGhostDistance.z);
-                if (projectedPos.z < currCollider.bounds.max.z && projectedPos.z > currCollider.bounds.min.z)
-                    detachPivot.transform.position = projectedPos;
+                //Debug.Log("isDetached = false");
             }
         }
         else
         {
-            //Debug.Log("isDetached = false");
+            message = testArduinoSerialController.ReadSerialMessage();
         }
+
+        if (message == null)
+        {
+            leftSwitchIndicator.color = Color.gray;
+            rightSwitchIndicator.color = Color.gray;
+            mistakeIndicator.color = Color.gray;
+            if (!trainingPhase)
+            {
+                beepsound.mute = true;
+            }
+            return;
+        }
+
+        // Check if the message is plain data or a connect/disconnect event.
+        if (ReferenceEquals(message, SerialController.SERIAL_DEVICE_CONNECTED))
+            Debug.Log("Connection established");
+        else if (ReferenceEquals(message, SerialController.SERIAL_DEVICE_DISCONNECTED))
+            Debug.Log("Connection attempt failed or disconnection detected");
+        else
+        {
+            //Debug.Log("Message arrived: " + message);
+            if (message == "1")
+            {
+                mistakeIndicator.color = Color.red;
+                if (trainingPhase)
+                {
+                    beepsound.mute = false;
+                    //beepsound.Play();
+                    //beepsound.PlayOneShot(beepsound.GetComponent<AudioClip>());
+                    StartCoroutine(Haptics(1, 1, 0.1f, true, false));
+                }
+
+                if (client != null)
+                    client.Write("M;1;;;BuzzWireHit;Buzz wire was hit\r\n");
+            }
+            else
+            {
+                beepsound.mute = true;
+            }
+
+            if (message == "+")
+            {
+                leftSwitchIndicator.color = Color.green;
+                if (client != null)
+                    client.Write("M;1;;;LeftSwitchPressed;Left Switch Pressed\r\n");
+            }
+            else if (message == "*")
+            {
+                rightSwitchIndicator.color = Color.green;
+                if (client != null)
+                    client.Write("M;1;;;RightSwitchPressed;Right Switch Pressed\r\n");
+            }
+            else
+            {
+                leftSwitchIndicator.color = Color.gray;
+                rightSwitchIndicator.color = Color.gray;
+            }
+            message = "";
+        }
+
     }
 
     public void doControllerDetachOperations(CapsuleCollider _collider, string tag, Vector3 _detachPt)
@@ -172,19 +336,14 @@ public class GameControllerScript : MonoBehaviour
         Debug.Log("isDetached = true, collision with " + tag);
         isDetached = true;
         currDragDir = tag; //x-dir, y-dir or z-dir
-        //hookRoot.transform.SetParent(null);
-        //originalHookModel.SetActive(false);
-        //hookChildWithColliders.GetComponent<Rigidbody>().isKinematic = false;
-        //righthandController.SetActive(false);
-        //righthandController.GetComponent<MeshRenderer>().enabled = false;
 
-        //snapSlot.SetActive(true);
-        //checkSnapCondition = true;
         detachPt = _detachPt;
-        detachPivot.transform.position = detachPt;
+        detachPivot.transform.position = detachPt;        
 
         solidRightHandController.SetActive(true);
+
         solidRightHandController.transform.SetParent(detachPivot.transform);
+        
         ghostRightHandController.SetActive(true);
     }
 
@@ -197,23 +356,13 @@ public class GameControllerScript : MonoBehaviour
     {
         Debug.Log("isDetached = false, collision with " + tag);
         isDetached = false;
-        //originalHookModel.SetActive(true);
-        /*hookRoot.transform.SetParent(righthandController.transform);
-        hookRoot.transform.localPosition = hookRootDefaultPos;
-        hookRoot.transform.localRotation = hookRootDefaultRot;
-        hookChildWithColliders.GetComponent<Rigidbody>().isKinematic = true;*/
-        //righthandController.SetActive(true);
-        //righthandController.GetComponent<MeshRenderer>().enabled = true;
+
         ghostRightHandController.SetActive(false);
 
-
-        //solidRightHandController.SetActive(false);
         solidRightHandController.transform.SetParent(hookRoot.transform);
         solidRightHandController.transform.localRotation = solidRightHandControllerDefaultRot;
         solidRightHandController.transform.localPosition = solidRightHandControllerDefaultPos;
 
-        //snapSlot.SetActive(false);
-        //checkSnapCondition = false;
     }
 
     public void triggerMistakeFeedback()
@@ -228,11 +377,7 @@ public class GameControllerScript : MonoBehaviour
     public void stopMistakeFeedback()
     {
         beepsound.mute = true;
-        //StartCoroutine(Haptics(1, 1, 0.1f, true, false));
-        /*foreach (GameObject light in lights)
-        {
-            light.GetComponent<MeshRenderer>().material = lightOffMat;
-        }*/
+
         mistakeLight.SetActive(false);
     }
 
@@ -246,4 +391,10 @@ public class GameControllerScript : MonoBehaviour
         if (rightHand) OVRInput.SetControllerVibration(0, 0, OVRInput.Controller.RTouch);
         if (leftHand) OVRInput.SetControllerVibration(0, 0, OVRInput.Controller.LTouch);
     }
+
+    private void OnApplicationQuit()
+    {
+        client.Disconnect();
+    }
+
 }

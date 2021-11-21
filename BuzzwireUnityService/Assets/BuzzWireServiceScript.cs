@@ -23,6 +23,7 @@ public class BuzzWireServiceScript : MonoBehaviour
     public GameObject baselineOverIndicator;
     public GameObject restOverIndicator;
     public TMPro.TMP_Text modeTxt;
+    public TMPro.TMP_Text iMotionsConnText;
 
     public string receivedstring;
     // Start is called before the first frame update
@@ -32,10 +33,10 @@ public class BuzzWireServiceScript : MonoBehaviour
         beepsound.mute = true;
         //testArduinoSerialController = testArduinoObj.GetComponent<SerialController>();
         //testArduinoSerialController = trainingArduinoObj.GetComponent<SerialController>();
-        client = new SimpleTcpClient().Connect("127.0.0.1", 8089); //For imotions
         leftSwitchIndicator.color = Color.gray;
         rightSwitchIndicator.color = Color.gray;
         mistakeIndicator.color = Color.gray;
+        client = new SimpleTcpClient().Connect("127.0.0.1", 8089);
     }
 
     public void startTask()
@@ -174,12 +175,16 @@ public class BuzzWireServiceScript : MonoBehaviour
     void FixedUpdate()
     {
 
-        if (Input.GetKeyUp(KeyCode.A))
+        if (client == null)
         {
-            //beepsound.Play();
-            //StartCoroutine(Haptics(1, 1, 0.1f, true, false));
+            iMotionsConnText.color = Color.red;
+            iMotionsConnText.text = "iMotions Disconnected";
         }
-
+        else
+        {
+            iMotionsConnText.color = Color.green;
+            iMotionsConnText.text = "iMotions Connected";
+        }
         string message;
 
         if (trainingPhase)

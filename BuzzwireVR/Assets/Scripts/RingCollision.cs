@@ -8,10 +8,13 @@ public class RingCollision : MonoBehaviour
     Collider currCollider;
     Collider oldCollider;
     Vector3 loc;
+    public GameObject startStopLight;
+    int numCollidersInContact;
+
     // Start is called before the first frame update
     void Start()
     {
-        
+        numCollidersInContact = 0;
     }
 
     // Update is called once per frame
@@ -22,20 +25,40 @@ public class RingCollision : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (currCollider != null)
+        ++numCollidersInContact;
+        //Debug.Log("Number of colliders in contact - " + numCollidersInContact);
+        
+        if (other.tag != "StartZone" && other.tag != "StopZone" && gameController.GetComponent<GameControllerScript>().feedbackEnabled)
         {
-            //oldCollider = currCollider;
-            currCollider.enabled = false;
-            delayEnableOldCollider(currCollider);
-            currCollider = other;            
+            if (currCollider != null)
+            {
+                //currCollider.enabled = false;
+                //delayEnableOldCollider(currCollider);
+                currCollider = other;
+            }
+            else
+            {
+                currCollider = other;
+            }
+            Debug.Log("Entry into " + other.gameObject);
+            gameController.GetComponent<GameControllerScript>().doControllerReattachOperations(other.gameObject.tag);
+            gameController.GetComponent<GameControllerScript>().stopMistakeFeedback();
         }
-        else
-        {            
-            currCollider = other;
+        else if (other.tag == "StopZone")
+        {
+            gameController.GetComponent<GameControllerScript>().feedbackEnabled = false;
+            gameController.GetComponent<GameControllerScript>().startStopRefController.SetActive(true);
+            gameController.GetComponent<GameControllerScript>().startStopRefController.transform.position = gameController.GetComponent<GameControllerScript>().stopPositions[gameController.GetComponent<GameControllerScript>().currLevel - 1];
+            gameController.GetComponent<GameControllerScript>().solidRightHandController.SetActive(false);
+            gameController.GetComponent<GameControllerScript>().ghostRightHandController.SetActive(true);
         }
-        Debug.Log("Entry into "  + other.gameObject);
-        gameController.GetComponent<GameControllerScript>().doControllerReattachOperations(other.gameObject.tag);
-        gameController.GetComponent<GameControllerScript>().stopMistakeFeedback();
+        else if (other.tag == "StartZone")
+        {
+            gameController.GetComponent<GameControllerScript>().feedbackEnabled = false;
+            gameController.GetComponent<GameControllerScript>().startStopRefController.SetActive(false);            
+            gameController.GetComponent<GameControllerScript>().solidRightHandController.SetActive(true);
+            gameController.GetComponent<GameControllerScript>().ghostRightHandController.SetActive(false);
+        }
     }
 
 
@@ -59,18 +82,54 @@ public class RingCollision : MonoBehaviour
 
     private void OnTriggerStay(Collider other)
     {
-        //Debug.Log("Collision with " + other.gameObject);
-        loc = other.gameObject.GetComponent<Collider>().ClosestPointOnBounds(transform.position);
-        //Debug.Log(loc);       
+
+        if (other.tag != "StartZone" && other.tag != "StopZone")
+        {
+            //Debug.Log("Collision with " + other.gameObject);
+            loc = other.gameObject.GetComponent<Collider>().ClosestPointOnBounds(transform.position);
+            //Debug.Log(loc);       
+        }
+        else if(other.tag == "StartZone")
+        {
+            startStopLight.SetActive(true);
+            gameController.GetComponent<GameControllerScript>().stopMistakeFeedback();
+            if (gameController.GetComponent<GameControllerScript>().client != null)
+                gameController.GetComponent<GameControllerScript>().client.Write("M;1;;;LeftSwitchPressed;Left Switch Pressed\r\n");
+        }
+        else if (other.tag == "StopZone")
+        {
+            startStopLight.SetActive(true);
+            gameController.GetComponent<GameControllerScript>().stopMistakeFeedback();
+            if (gameController.GetComponent<GameControllerScript>().client != null)
+                gameController.GetComponent<GameControllerScript>().client.Write("M;1;;;RightSwitchPressed;Right Switch Pressed\r\n");
+        }
     }
 
     private void OnTriggerExit(Collider other)
     {
-        currCollider = null;
-        Debug.Log("Exit from " + other.gameObject);
-        Debug.Log("Collider tag - " + other.gameObject.tag);
-        gameController.GetComponent<GameControllerScript>().doControllerDetachOperations((CapsuleCollider)other, other.gameObject.tag, loc);
-        gameController.GetComponent<GameControllerScript>().triggerMistakeFeedback();
+        --numCollidersInContact;
+
+        if (other.tag != "StartZone" && other.tag != "StopZone" && gameController.GetComponent<GameControllerScript>().feedbackEnabled)
+        {
+            startStopLight.SetActive(false);
+
+            Debug.Log("Exit from " + other.gameObject);
+            Debug.Log("Collider tag - " + other.gameObject.tag);
+            if (numCollidersInContact < 1)
+            {
+                Debug.Log("Number of colliders in contact is less than 1. Triggering feedback");
+                currCollider = null;
+                gameController.GetComponent<GameControllerScript>().doControllerDetachOperations((CapsuleCollider)other, other.gameObject.tag, loc);
+                gameController.GetComponent<GameControllerScript>().triggerMistakeFeedback();
+            }
+        }
+        else if (other.tag == "StartZone")
+        {
+            gameController.GetComponent<GameControllerScript>().feedbackEnabled = true;
+            gameController.GetComponent<GameControllerScript>().startStopRefController.SetActive(false);
+            gameController.GetComponent<GameControllerScript>().solidRightHandController.SetActive(true);
+            gameController.GetComponent<GameControllerScript>().ghostRightHandController.SetActive(false);
+        }
     }
 
     /*private void OnDrawGizmos()
