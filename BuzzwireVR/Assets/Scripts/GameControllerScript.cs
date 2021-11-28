@@ -13,6 +13,8 @@ public class GameControllerScript : MonoBehaviour
     public Vector3[] startPositions;
     public Vector3[] stopPositions;
 
+    public GameObject level1, tutorial;
+
     public GameObject env;
     public AudioSource beepsound;
     public AudioSource goSound;
@@ -37,6 +39,7 @@ public class GameControllerScript : MonoBehaviour
     Vector3 oldGhostPos;
     GameObject detachPivot;
 
+    public GameObject testArduinoSerialControllerObj;
     public SerialController testArduinoSerialController;
     
     //UI
@@ -46,15 +49,16 @@ public class GameControllerScript : MonoBehaviour
     public GameObject baselineOverIndicator;
     public GameObject restOverIndicator;
 
+
     public bool feedbackEnabled = false;
 
-    bool isDetached = false;
+    public bool isDetached = false;
     enum Direction { xDir, yDir, zDir};
     CapsuleCollider currCollider;
     string currDragDir;
     public Vector3 offsetPivotAng;
 
-    bool trainingPhase;
+    public bool trainingPhase, tutorialPhase;
 
     [Header("Materials")]
     public Material lightOffMat;
@@ -62,10 +66,19 @@ public class GameControllerScript : MonoBehaviour
 
     public GameObject mistakeLight;
 
+    private void Awake()
+    {
+        testArduinoSerialController.portName = PlayerPrefs.GetString("testCOMPort", "not_set");
+        Debug.Log("Test COM port set - " + testArduinoSerialController.portName);
+
+        //testArduinoSerialControllerObj.SetActive(true);
+    }
+
     // Start is called before the first frame update
     void Start()
     {
         trainingPhase = false;
+        tutorialPhase = false;
         beepsound.mute = true;
         currLevel = 1;
 
@@ -104,6 +117,7 @@ public class GameControllerScript : MonoBehaviour
 
     public IEnumerator startBaselineCounterCoroutine()
     {
+        modeTxt.text = "Baseline Active";
         Debug.Log("Baseline started");
         int seconds = 180;
         while (seconds > 0)
@@ -120,43 +134,81 @@ public class GameControllerScript : MonoBehaviour
         //Debug.Log("delayResetNewTasksFlag");
     }
 
-    public void startLevel(int level)
+    /*public void startTutorial()
     {
-        modeTxt.text = "Training Mode On";
-        trainingPhase = true;
+        modeTxt.text = "Tutorial Mode On";
+        tutorialPhase = true;
+    }*/
+
+    public void moveToLevel(int level)
+    {
+        //modeTxt.text = "Training Mode On";
+        //trainingPhase = true;
+        if (level == 0)
+        {
+            currLevel = 1;
+            modeTxt.text = "Tutorial Mode On";
+            tutorialPhase = true;
+            tutorial.SetActive(true);
+            level1.SetActive(false);
+            env.transform.eulerAngles = new Vector3(0, 0, 0);
+        }
         if (level == 1)
         {
+            tutorialPhase = false;
+            currLevel = 1;
+            tutorial.SetActive(false);
+            level1.SetActive(true);
+            env.transform.eulerAngles = new Vector3(0, 0, 0);
+            //goSound.Play();
             if (client != null)
                 client.Write("M;1;;;level_1_started;Level 1 started\r\n");
         }
         if (level == 2)
         {
+            tutorialPhase = false;
+            currLevel = 2;
+            env.transform.eulerAngles = new Vector3(0, -90, 0);
+            //goSound.Play();
             if (client != null)
                 client.Write("M;1;;;level_2_started;Level 2 started\r\n");
         }
         if (level == 3)
         {
+            tutorialPhase = false;
+            currLevel = 3;
+            env.transform.eulerAngles = new Vector3(0, -180, 0);
+            //goSound.Play();
             if (client != null)
                 client.Write("M;1;;;level_3_started;Level 3 started\r\n");
         }
         if (level == 4)
         {
+            tutorialPhase = false;
+            currLevel = 4;
+            env.transform.eulerAngles = new Vector3(0, -270, 0);
+            //goSound.Play();
             if (client != null)
                 client.Write("M;1;;;level_4_started;Level 4 started\r\n");
         }
+
+        startStopRefController.transform.position = startPositions[currLevel - 1];
+
     }
 
     public void startTest(int stage)
     {
-        modeTxt.text = "Test Mode On";
+        goSound.Play();
         if (stage == 1)
         {
+            modeTxt.text = "Pre Test Active";
             trainingPhase = false;
             if (client != null)
                 client.Write("M;1;;;pre_test_started;Test (pre) started\r\n");
         }
         if (stage == 2)
         {
+            modeTxt.text = "Post Test Active";
             trainingPhase = false;
             if (client != null)
                 client.Write("M;1;;;post_test_started;Test (post) started\r\n");
@@ -177,18 +229,62 @@ public class GameControllerScript : MonoBehaviour
             restOverIndicator.GetComponentInChildren<Text>().text = "" + seconds + "s";
             seconds--;
         }
+        if (client != null)
+            client.Write("M;1;;;rest_over;Rest over\r\n");
         goSound.Play();
         restOverIndicator.GetComponentInChildren<Text>().text = "Rest over";
         //Debug.Log("delayResetNewTasksFlag");
     }
-    
-    public void gotoNextLevel()
+
+    public void startRest(int level)
+    {
+        modeTxt.text = "Level " + level + " Active";
+        trainingPhase = true;
+        if (level == 1)
+        {
+            startRest();
+            if (client != null)
+            {
+                client.Write("M;1;;;level_1_started;Level 1 started\r\n");
+                client.Write("M;1;;;level_1_rest_started;Level 1 rest started\r\n");
+            }
+        }
+        if (level == 2)
+        {
+            startRest();
+            if (client != null)
+            {
+                client.Write("M;1;;;level_2_started;Level 2 started\r\n");
+                client.Write("M;1;;;level_2_rest_started;Level 2 rest started\r\n");
+            }
+        }
+        if (level == 3)
+        {
+            startRest();
+            if (client != null)
+            {
+                client.Write("M;1;;;level_3_started;Level 3 started\r\n");
+                client.Write("M;1;;;level_3_rest_started;Level 3 rest started\r\n");
+            }
+        }
+        if (level == 4)
+        {
+            startRest();
+            if (client != null)
+            {
+                client.Write("M;1;;;level_4_started;Level 4 started\r\n");
+                client.Write("M;1;;;level_4_rest_started;Level 4 rest started\r\n");
+            }
+        }
+    }
+
+    /*public void gotoNextLevel()
     {
         ++currLevel;
         if (currLevel == 5) currLevel = 1;
         startStopRefController.transform.position = startPositions[currLevel - 1];
         env.transform.Rotate(0, -90, 0);
-    }
+    }*/
 
     public void stopFeedback()
     {
@@ -222,13 +318,13 @@ public class GameControllerScript : MonoBehaviour
 
         string message;
 
-        if (trainingPhase)
+        if (trainingPhase || tutorialPhase)
         {
             message = null;
             if (isDetached && feedbackEnabled)
             {
                 StartCoroutine(Haptics(1, 1, 0.1f, true, false));
-                if(client!=null)
+                if(client!=null && !tutorialPhase)
                     client.Write("M;1;;;BuzzWireHit;Buzz wire was hit\r\n");
                 //Debug.Log("isDetached = true");
                 if (currDragDir == "x-axis")
@@ -274,7 +370,7 @@ public class GameControllerScript : MonoBehaviour
             leftSwitchIndicator.color = Color.gray;
             rightSwitchIndicator.color = Color.gray;
             mistakeIndicator.color = Color.gray;
-            if (!trainingPhase)
+            if (!trainingPhase && !tutorialPhase)
             {
                 beepsound.mute = true;
             }
@@ -292,14 +388,6 @@ public class GameControllerScript : MonoBehaviour
             if (message == "1")
             {
                 mistakeIndicator.color = Color.red;
-                if (trainingPhase)
-                {
-                    beepsound.mute = false;
-                    //beepsound.Play();
-                    //beepsound.PlayOneShot(beepsound.GetComponent<AudioClip>());
-                    StartCoroutine(Haptics(1, 1, 0.1f, true, false));
-                }
-
                 if (client != null)
                     client.Write("M;1;;;BuzzWireHit;Buzz wire was hit\r\n");
             }
@@ -341,9 +429,7 @@ public class GameControllerScript : MonoBehaviour
         detachPivot.transform.position = detachPt;        
 
         solidRightHandController.SetActive(true);
-
-        solidRightHandController.transform.SetParent(detachPivot.transform);
-        
+        solidRightHandController.transform.SetParent(detachPivot.transform);        
         ghostRightHandController.SetActive(true);
     }
 
@@ -367,6 +453,7 @@ public class GameControllerScript : MonoBehaviour
 
     public void triggerMistakeFeedback()
     {
+        Debug.Log("triggerMistakeFeedback");
         //StartCoroutine(Haptics(1, 1, 0.1f, true, false));
         beepsound.mute = false;
         //mistakeLight.GetComponent<MeshRenderer>().material = lightOnMat;

@@ -10,6 +10,7 @@ public class BuzzWireServiceScript : MonoBehaviour
 {
     public AudioSource beepsound;
     public AudioSource goSound;
+    public GameObject testArduinoSerialControllerObj, trainingArduinoSerialControllerObj;
     public SerialController testArduinoSerialController;
     public SerialController trainingArduinoSerialController;
     SimpleTcpClient client;
@@ -26,6 +27,19 @@ public class BuzzWireServiceScript : MonoBehaviour
     public TMPro.TMP_Text iMotionsConnText;
 
     public string receivedstring;
+
+    private void Awake()
+    {
+        testArduinoSerialController.portName = PlayerPrefs.GetString("testCOMPort", "not_set");
+        Debug.Log("Test COM port set - " + testArduinoSerialController.portName);
+
+        trainingArduinoSerialController.portName = PlayerPrefs.GetString("trainingCOMPort", "not_set");
+        Debug.Log("Training COM port set - " + trainingArduinoSerialController.portName);
+
+        testArduinoSerialControllerObj.SetActive(true);
+        trainingArduinoSerialControllerObj.SetActive(true);
+    }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -49,9 +63,10 @@ public class BuzzWireServiceScript : MonoBehaviour
         client.Write("M;1;;;EndTask;Task has ended\r\n");
     }
 
-    public void startLevel(int level)
+    /*public void startLevel(int level)
     {
         modeTxt.text = "Training Mode On";
+        
         trainingPhase = true;
         if (level == 1)
         {
@@ -73,19 +88,21 @@ public class BuzzWireServiceScript : MonoBehaviour
             if (client != null)
                 client.Write("M;1;;;level_4_started;Level 4 started\r\n");
         }
-    }
+    }*/
 
     public void startTest(int stage)
     {
-        modeTxt.text = "Test Mode On";
+        goSound.Play();
         if (stage == 1)
         {
+            modeTxt.text = "Pre Test Active";
             trainingPhase = false;
             if (client != null)
                 client.Write("M;1;;;pre_test_started;Test (pre) started\r\n");
         }
         if (stage == 2)
         {
+            modeTxt.text = "Post Test Active";
             trainingPhase = false;
             if (client != null)
                 client.Write("M;1;;;post_test_started;Test (post) started\r\n");
@@ -102,6 +119,7 @@ public class BuzzWireServiceScript : MonoBehaviour
 
     public IEnumerator startBaselineCounterCoroutine()
     {
+        modeTxt.text = "Baseline Active";
         Debug.Log("Baseline started");
         int seconds = 180;
         while (seconds > 0)
@@ -132,6 +150,8 @@ public class BuzzWireServiceScript : MonoBehaviour
             restOverIndicator.GetComponentInChildren<Text>().text = "" + seconds + "s";
             seconds--;
         }
+        if (client != null)
+            client.Write("M;1;;;rest_over;Rest over\r\n");
         goSound.Play();
         restOverIndicator.GetComponentInChildren<Text>().text = "Rest over";
         //Debug.Log("delayResetNewTasksFlag");
@@ -145,29 +165,42 @@ public class BuzzWireServiceScript : MonoBehaviour
 
     public void startRest(int level)
     {
+        modeTxt.text = "Level " + level + " Active";
         if (level == 1)
         {
             startRest();
             if (client != null)
+            {                
+                client.Write("M;1;;;level_1_started;Level 1 started\r\n");
                 client.Write("M;1;;;level_1_rest_started;Level 1 rest started\r\n");
+            }
         }
         if (level == 2)
         {
             startRest();
             if (client != null)
+            {
+                client.Write("M;1;;;level_2_started;Level 2 started\r\n");
                 client.Write("M;1;;;level_2_rest_started;Level 2 rest started\r\n");
+            }
         }
         if (level == 3)
         {
             startRest();
             if (client != null)
+            {
+                client.Write("M;1;;;level_3_started;Level 3 started\r\n");
                 client.Write("M;1;;;level_3_rest_started;Level 3 rest started\r\n");
+            }
         }
         if (level == 4)
         {
             startRest();
             if (client != null)
+            {
+                client.Write("M;1;;;level_4_started;Level 4 started\r\n");
                 client.Write("M;1;;;level_4_rest_started;Level 4 rest started\r\n");
+            }
         }
     }
 
