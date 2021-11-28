@@ -71,7 +71,7 @@ public class GameControllerScript : MonoBehaviour
         testArduinoSerialController.portName = PlayerPrefs.GetString("testCOMPort", "not_set");
         Debug.Log("Test COM port set - " + testArduinoSerialController.portName);
 
-        //testArduinoSerialControllerObj.SetActive(true);
+        testArduinoSerialControllerObj.SetActive(true);
     }
 
     // Start is called before the first frame update
@@ -198,7 +198,7 @@ public class GameControllerScript : MonoBehaviour
 
     public void startTest(int stage)
     {
-        goSound.Play();
+        //goSound.Play();
         if (stage == 1)
         {
             modeTxt.text = "Pre Test Active";

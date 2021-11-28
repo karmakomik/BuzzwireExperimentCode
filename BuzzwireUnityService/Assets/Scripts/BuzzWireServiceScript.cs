@@ -92,7 +92,7 @@ public class BuzzWireServiceScript : MonoBehaviour
 
     public void startTest(int stage)
     {
-        goSound.Play();
+        //goSound.Play();
         if (stage == 1)
         {
             modeTxt.text = "Pre Test Active";
@@ -162,6 +162,11 @@ public class BuzzWireServiceScript : MonoBehaviour
         if (client != null)
             client.Write("M;1;;;baseline_stopped;Baseline stopped\r\n");
     }*/
+
+    public void startTraining()
+    {
+        trainingPhase = true;
+    }
 
     public void startRest(int level)
     {
