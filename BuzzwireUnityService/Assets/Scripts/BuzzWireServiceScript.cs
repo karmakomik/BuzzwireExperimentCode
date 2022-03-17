@@ -90,6 +90,11 @@ public class BuzzWireServiceScript : MonoBehaviour
         }
     }*/
 
+    public void startTestMode()
+    {
+        trainingPhase = false;
+    }
+
     public void startTest(int stage)
     {
         //goSound.Play();
