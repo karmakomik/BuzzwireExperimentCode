@@ -14,10 +14,10 @@ The projects can be found in the sub-folders listed below. The software requirem
 
 ## Authors and acknowledgment
 
-Programming (Unity/Arduino) - Unnikrishnan Radhakrishnan, PhD fellow, Aarhus University
-Design of experiment - Unnikrishnan Radhakrishnan, Konstantinos Koumaditis, Francesco Chinello
-Hardware - Francesco Chinello, Unnikrishnan Radhakrishnan
+- Programming (Unity/Arduino) - Unnikrishnan Radhakrishnan, PhD fellow, Aarhus University
+- Design of experiment - Unnikrishnan Radhakrishnan, Konstantinos Koumaditis, Francesco Chinello
+- Hardware - Francesco Chinello, Unnikrishnan Radhakrishnan
 
-## Visuals
+## Screenshots
 todo : add screenshots
 
